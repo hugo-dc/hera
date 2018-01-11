@@ -148,7 +148,7 @@ int main(int argc, char *argv[]) {
 */
 
 uint8_t code[2048];
-int fd = open("./aa.wasm", O_RDONLY);
+int fd = open("./wasm/aa.wasm", O_RDONLY);
 if (fd < 0)
   abort();
 size_t code_size = read(fd, code, sizeof(code));

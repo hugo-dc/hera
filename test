@@ -1,0 +1,12 @@
+#!/bin/bash
+wat2wasm wast/$1.wast
+mv $1.wasm wasm/
+rm wasm/aa.wasm
+cp wasm/$1.wasm wasm/aa.wasm
+ls wasm/
+
+if [[ "$2" == "compile" ]] ; then
+   make && make capi && ./capi
+else
+   ./capi
+fi
