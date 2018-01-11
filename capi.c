@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
+#include <yaml-cpp/yaml.h>
 
 #include "evm.h"
 
@@ -147,6 +148,14 @@ int main(int argc, char *argv[]) {
 	"\x9a\x05\x10\x00\x0b";
 */
 
+    std::ifstream fin("tests/usegas.yml");
+    YAML::Parser parser(fin);
+
+    YAML::Node doc;
+    while(parser.GetNextDocument(doc)) {
+      cout << "something...";
+    }
+    
 uint8_t code[2048];
 int fd = open("./wasm/aa.wasm", O_RDONLY);
 if (fd < 0)
