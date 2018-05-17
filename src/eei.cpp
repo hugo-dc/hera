@@ -664,7 +664,9 @@ string toHex(evmc_uint256be const& value) {
       call_message.destination = loadUint160(addressOffset);
       call_message.flags = msg.flags;
       call_message.code_hash = {};
-      call_message.gas = gas - (gas / 64);
+      // gas minus 1/64 rule applies only if the gas argument exceeds 63/64 of total gas remaining
+      // call_message.gas = gas - (gas / 64);
+      call_message.gas = gas;
       call_message.depth = msg.depth + 1;
 
       if (import->base == Name("call") || import->base == Name("callCode")) {
@@ -718,12 +720,32 @@ string toHex(evmc_uint256be const& value) {
 
       evmc_result call_result;
 
-      if (import->base == Name("call") && !context->fn_table->account_exists(context, &call_message.destination))
-        takeGas(GasSchedule::callNewAccount);
-      if (!isZeroUint256(call_message.value))
-        takeGas(GasSchedule::valuetransfer);
+      int64_t extra_gas = 0;
+
+      if (import->base == Name("call") && !context->fn_table->account_exists(context, &call_message.destination)) {
+        extra_gas += GasSchedule::callNewAccount;
+        //takeGas(GasSchedule::callNewAccount);
+      }
+      if (!isZeroUint256(call_message.value)) {
+        extra_gas += GasSchedule::valuetransfer;
+        //takeGas(GasSchedule::valuetransfer);
+      }
+      extra_gas += GasSchedule::call;
+      //takeGas(GasSchedule::call);
+
+      int64_t gas_available = result.gasLeft - extra_gas;
+      int64_t gas_sixty_fourth = gas_available - (gas_available / 64);
+      if (call_message.gas > gas_sixty_fourth) {
+        call_message.gas = gas_sixty_fourth;
+      }
+
+      // add 2300 gas stipend for value transfers
+      if (!isZeroUint256(call_message.value)) {
+        call_message.gas += 2300;
+      }
+
       takeGas(call_message.gas);
-      takeGas(GasSchedule::call);
+
       context->fn_table->call(&call_result, context, &call_message);
 
       if (call_result.output_data) {
